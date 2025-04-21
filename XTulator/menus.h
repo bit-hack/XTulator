@@ -18,7 +18,7 @@ typedef struct {
 	wchar_t* title;
 	uint8_t enabled;
 	uint8_t type;
-	void (*function)();
+	uint32_t func;
 } MENU_t;
 
 typedef struct {

@@ -37,48 +37,70 @@ uint32_t menus_resetTimer;
 const uint8_t menus_ctrlaltdel[3] = { 0x1D, 0x38, 0x53 };
 uint8_t menus_resetPos = 0;
 
+typedef void (*MENU_FUNC_t)();
+
+MENU_FUNC_t menu_func[] = {
+	NULL,
+	menus_reset,
+	menus_exit,
+	menus_changeFloppy0,
+	menus_changeFloppy1,
+	menus_ejectFloppy0,
+	menus_ejectFloppy1,
+	menus_insertHard0,
+	menus_insertHard1,
+	menus_setBootFloppy0,
+	menus_setBootHard0,
+	menus_speed477,
+	menus_speed8,
+	menus_speed10,
+	menus_speed16,
+	menus_speed25,
+	menus_speed50,
+	menus_speedunlimited
+};
+
 MENU_t menu_file[] = {
-	{ TEXT("Soft &reset (Ctrl-Alt-Del)"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_reset },
-	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, NULL },
-	{ TEXT("E&xit"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_exit },
+	{ TEXT("Soft &reset (Ctrl-Alt-Del)"), MENUS_ENABLED, MENUS_FUNCTION, 1 },
+	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, 0 },
+	{ TEXT("E&xit"), MENUS_ENABLED, MENUS_FUNCTION, 2 },
 	{ NULL }
 };
 
 MENU_t menu_disk[] = {
-	{ TEXT("Change floppy 0..."), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_changeFloppy0 },
-	{ TEXT("Change floppy 1..."), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_changeFloppy1 },
-	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, NULL },
-	{ TEXT("Eject floppy 0"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_ejectFloppy0 },
-	{ TEXT("Eject floppy 1"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_ejectFloppy1 },
-	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, NULL },
-	{ TEXT("Insert hard disk 0... (forces immediate reboot)"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_insertHard0 },
-	{ TEXT("Insert hard disk 1... (forces immediate reboot)"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_insertHard1 },
-	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, NULL },
-	{ TEXT("Set boot drive to fd0"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_setBootFloppy0 },
-	{ TEXT("Set boot drive to hd0"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_setBootHard0 },
+	{ TEXT("Change floppy 0..."), MENUS_ENABLED, MENUS_FUNCTION, 3 },
+	{ TEXT("Change floppy 1..."), MENUS_ENABLED, MENUS_FUNCTION, 4 },
+	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, 0 },
+	{ TEXT("Eject floppy 0"), MENUS_ENABLED, MENUS_FUNCTION, 5 },
+	{ TEXT("Eject floppy 1"), MENUS_ENABLED, MENUS_FUNCTION, 6 },
+	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, 0 },
+	{ TEXT("Insert hard disk 0... (forces immediate reboot)"), MENUS_ENABLED, MENUS_FUNCTION, 7 },
+	{ TEXT("Insert hard disk 1... (forces immediate reboot)"), MENUS_ENABLED, MENUS_FUNCTION, 8 },
+	{ TEXT(""), MENUS_ENABLED, MENUS_SEPARATOR, 0 },
+	{ TEXT("Set boot drive to fd0"), MENUS_ENABLED, MENUS_FUNCTION, 9 },
+	{ TEXT("Set boot drive to hd0"), MENUS_ENABLED, MENUS_FUNCTION, 10 },
 	{ NULL }
 };
 
 MENU_t menu_emulation[] = {
-	{ TEXT("Set CPU speed to 4.77 MHz"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_speed477 },
-	{ TEXT("Set CPU speed to 8 MHz"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_speed8 },
-	{ TEXT("Set CPU speed to 10 MHz"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_speed10 },
-	{ TEXT("Set CPU speed to 16 MHz"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_speed16 },
-	{ TEXT("Set CPU speed to 25 MHz"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_speed25 },
-	{ TEXT("Set CPU speed to 50 MHz"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_speed50 },
-	{ TEXT("Set CPU speed to unlimited"), MENUS_ENABLED, MENUS_FUNCTION, (void*)menus_speedunlimited },
+	{ TEXT("Set CPU speed to 4.77 MHz"), MENUS_ENABLED, MENUS_FUNCTION, 11 },
+	{ TEXT("Set CPU speed to 8 MHz"), MENUS_ENABLED, MENUS_FUNCTION, 12 },
+	{ TEXT("Set CPU speed to 10 MHz"), MENUS_ENABLED, MENUS_FUNCTION, 13 },
+	{ TEXT("Set CPU speed to 16 MHz"), MENUS_ENABLED, MENUS_FUNCTION, 14 },
+	{ TEXT("Set CPU speed to 25 MHz"), MENUS_ENABLED, MENUS_FUNCTION, 15 },
+	{ TEXT("Set CPU speed to 50 MHz"), MENUS_ENABLED, MENUS_FUNCTION, 16 },
+	{ TEXT("Set CPU speed to unlimited"), MENUS_ENABLED, MENUS_FUNCTION, 17 },
 	{ NULL }
 };
 
-
-LRESULT CALLBACK menus_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	void (*func)();
+LRESULT APIENTRY  menus_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	MENU_FUNC_t func;
 
 	switch (msg) {
 	case WM_COMMAND:
-		func = (void*)wParam;
+		func = menu_func[wParam];
 		if (func != NULL) {
-			(*func)();
+			func();
 		}
 		return(TRUE);
 	}
@@ -94,7 +116,7 @@ int menus_buildMenu(HMENU* hmenuBar, wchar_t* title, MENU_t* menu) {
 	i = 0;
 	while (menu[i].title != NULL) {
 		if (menu[i].type == MENUS_FUNCTION) {
-			AppendMenuW(hmenu, MF_STRING, (UINT)menu[i].function, menu[i].title);
+			AppendMenuW(hmenu, MF_STRING, (UINT_PTR)menu[i].func, menu[i].title);
 		}
 		else if (menu[i].type == MENUS_SEPARATOR) {
 			AppendMenuW(hmenu, MF_SEPARATOR, 0, NULL);
@@ -134,7 +156,7 @@ int menus_init(HWND hwnd) {
 	SetMenu(hwnd, hmenuBar);
 	DrawMenuBar(hwnd);
 
-	menus_oldProc = (WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG_PTR)menus_wndProc);
+	menus_oldProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)menus_wndProc);
 	menus_resetTimer = timing_addTimer(menus_resetCallback, NULL, 10, TIMING_DISABLED);
 
 	return 0;
